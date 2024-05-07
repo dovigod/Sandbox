@@ -1,7 +1,12 @@
-:root {
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-size: 10px;
   outline: none;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
 }
