@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "vanila": "turbo dev --filter=vanila",
+    "react": "turbo dev --filter=react"
   },
   "devDependencies": {
     "prettier": "^3.2.5",
