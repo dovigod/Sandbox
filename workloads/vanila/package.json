@@ -8,9 +8,11 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "@packages/animation" : "workspace:*"
+  },
   "devDependencies": {
     "path": "^0.12.7",
-    "vite": "^5.2.0",
-    "@packages/plugins": "workspace:*"
+    "vite": "^5.2.0"
   }
 }
