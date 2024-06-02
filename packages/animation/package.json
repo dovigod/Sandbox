@@ -9,6 +9,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "three": "^0.165.0"
+    "three": "^0.165.0",
+    "@packages/utils" : "workspace:*"
   }
 }

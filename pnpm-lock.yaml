@@ -24,6 +24,9 @@ importers:
 
   packages/animation:
     dependencies:
+      '@packages/utils':
+        specifier: workspace:*
+        version: link:../utils
       three:
         specifier: ^0.165.0
         version: 0.165.0

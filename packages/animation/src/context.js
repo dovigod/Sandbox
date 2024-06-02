@@ -1,9 +1,10 @@
 import * as THREE from "three";
+import { stats } from "@packages/utils";
 
-export function createAnimationContext(animation, settings = {}) {
+export function createAnimationContext(animation, config = { simulator: false }) {
   const context = {
     id: Symbol("context-id"),
-    stats: false,
+    stats: config.simulator,
     state: false,
     env: {
       mouse2d: new THREE.Vector2(0, 0),
@@ -14,14 +15,23 @@ export function createAnimationContext(animation, settings = {}) {
         vpHeight: window.innerHeight,
       },
     },
+    attach: (record) => {
+      Object.assign(context, record);
+    },
   };
   let _clearListeners = null;
   let _frameId = null;
   const task = animation.bind(null, context);
 
   const _setup = () => {
+    if ("onSetup" in config) {
+      config.onSetup(context);
+    }
+    _clearListeners = _setupListeners(context, config.listeners);
+    if (context.stats) {
+      stats.render();
+    }
     context.state = true;
-    _clearListeners = _setupListeners(context, settings.listeners);
   };
   const _dispose = () => {
     if (typeof _clearListeners === "function") {
@@ -30,10 +40,14 @@ export function createAnimationContext(animation, settings = {}) {
     if (_frameId) {
       cancelAnimationFrame(_frameId);
     }
+    if (context.stats) {
+      stats.end();
+    }
   };
 
   const _exec = () => {
     task();
+    context.renderer.render(context.scene, context.camera);
     _frameId = requestAnimationFrame(_exec);
   };
 
@@ -48,7 +62,7 @@ export function createAnimationContext(animation, settings = {}) {
 }
 
 function _setupListeners(context, listeners) {
-  const _orz = _onResize.bind(null, context);
+  const _orz = _onResize.bind(null, context, listeners.resize);
   const _omm = _onMouseMove.bind(null, context, listeners.mousemove);
 
   // list all listeners
@@ -65,8 +79,6 @@ function _onMouseMove(context, mousemoveCallback, e) {
   const {
     env: { dimension, mouse2d },
   } = context;
-
-  console.log(e);
 
   mouse2d.x = (e.pageX / dimension.vpWidth) * 2 - 1;
   mouse2d.y = -(e.pageY / dimension.vpHeight) * 2 + 1;
@@ -85,7 +97,6 @@ function _onResize(context, resizeCallback, e) {
   const resizedVPH = window.innerHeight;
   context.env.dimension.vpWidth = resizedVPW;
   context.env.dimension.vpHeight = resizedVPH;
-
   if (resizeCallback) {
     const syntheticEvent = {
       context,
