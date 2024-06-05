@@ -4,11 +4,10 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { ShatteredBufferGeometry } from "./ShatteredBufferGeometry";
-import vert from "./shatteredVert.glsl";
-import frag from "./shatteredFrag.glsl";
 import { ShatterAnimation } from "./ShatterAnimation";
 import { stats } from "../../../../packages/utils";
 import * as dat from "lil-gui";
+import { ShatteredMaterial } from "./ShatteredMaterial";
 
 const TEXT = "137.5";
 const gui = new dat.GUI();
@@ -62,14 +61,7 @@ async function initStage(context) {
 
   const geometry = new ShatteredBufferGeometry(textGeometry);
 
-  const shaderMaterial = new THREE.ShaderMaterial({
-    flatShading: true,
-    transparent: true,
-    side: THREE.DoubleSide,
-    vertexShader: vert,
-    fragmentShader: frag,
-  });
-
+  const shaderMaterial = new ShatteredMaterial();
   const shatterAnimation = new ShatterAnimation(scene, geometry, shaderMaterial, { animationDuration: 5 });
 
   scene.add(shatterAnimation.mesh);
@@ -95,9 +87,6 @@ async function initStage(context) {
   gui.add(shatterAnimation.config, "stretch", 0, 3, 0.01).onFinishChange(() => {
     shatterAnimation.updateConfig();
   });
-  gui.add(shatterAnimation, "animationDuration", 3, 20, 0.5).onFinishChange(() => {
-    shatterAnimation.updateConfig();
-  });
 
   const actions = {
     pause: shatterAnimation.pause.bind(shatterAnimation),
@@ -108,6 +97,7 @@ async function initStage(context) {
   gui.add(actions, "pause");
   gui.add(actions, "resume");
   gui.add(actions, "restart");
+  console.log(geometry);
 
   function resize() {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -145,14 +135,11 @@ function animation(context) {
   const delta = clock.getDelta();
   stats.update();
   context.controls.update();
-  // context.controls.dispose();
 }
 
 const contextHandler = createAnimationContext(animation, {
   listeners: {
-    mousemove: (e) => {
-      // console.log("hi", e);
-    },
+    mousemove: (e) => {},
   },
   onSetup: initStage,
   simulator: true,
@@ -160,4 +147,3 @@ const contextHandler = createAnimationContext(animation, {
 
 await contextHandler.setup();
 contextHandler.exec();
-// contextHandler.dispose();

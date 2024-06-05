@@ -33,10 +33,12 @@ void main() {
 
 
   vec3 transformed = position;
-  // aCentroid.z = 0.1;
+
   transformed *= 1.0 - progress;
 
   transformed += cubicBezier(transformed, aCp0, aCp1, aDestination, progress);
+
+  // transformed = transformed - aCentroid;
   // float cof = step(0.99 , random(position));
   // if(cof == 1.0){
   //   transformed += cubicBezier(transformed, aCp0, aCp1, aDestination, progress);

@@ -9,7 +9,6 @@ const DESTINATION_ATTR_SIZE = 3;
 export class ShatterAnimation {
   #id = Symbol("shatter-animation-id");
   static activeSession = new WeakMap();
-
   constructor(scene, geometry, material, config = {}) {
     const self = this;
     this.scene = scene;
@@ -17,7 +16,7 @@ export class ShatterAnimation {
     this.geometry = geometry;
     this.material = material;
     this.mesh = null;
-    this.duration = this.config.maxDelayY + this.config.maxDelayX + this.config.maxDuration - 3;
+    this.duration = this.config.maxDelayY + this.config.maxDelayX + this.config.maxDuration - 3; // need remove of magic numb
     this.animationDuration = this.config.animationDuration;
     this.progress = new Proxy(
       { value: 0 },
@@ -37,10 +36,7 @@ export class ShatterAnimation {
     );
 
     this.tl = gsap.timeline({ repeat: -1, yoyo: true });
-
-    this.progressFactor = 0;
     this._init();
-
     ShatterAnimation.activeSession.set(this, false);
   }
 
@@ -102,13 +98,18 @@ export class ShatterAnimation {
       const centroid = new Vector3(cx, cy, cz);
       const dimension = geometry.userData.size;
 
-      const delayX = Math.max(0, (centroid.x / dimension.width) * maxDelayX);
+      const delayX = Math.min(0, (centroid.x / dimension.width) * maxDelayX);
+
+      // will splash up if not inverse
       const delayY = Math.max(0, (1.0 - centroid.y / dimension.height) * maxDelayY);
       const duration = MathUtils.randFloat(minDuration, maxDuration);
 
       for (let j = 0; j < VERTEX_ITEM_SIZE * ANIMATION_ATTR_SIZE; j += ANIMATION_ATTR_SIZE) {
         const delayIdx = animationIdx;
         const durationIdx = animationIdx;
+
+        // for texture for tearing material, add stretch value.
+        // per force, larger mass results low velocity. to make this obvious ,increase delay to let larger mass(higher stretch) looks much slower
         aAnimation[delayIdx + j + 0] = delayX + delayY + Math.random() * stretch;
         aAnimation[durationIdx + j + 1] = duration;
       }
@@ -117,11 +118,14 @@ export class ShatterAnimation {
       const c0y = centroid.y + dimension.height * MathUtils.randFloat(...cp0Y);
       const c0z = MathUtils.randFloatSpread(cp0Z);
 
+      // each control point has symmetric relationship with line connecting start-end point
+      // briefly set symmertry line to x-coord
       const c1x = centroid.x + MathUtils.randFloat(...cp1X) * -1;
       const c1y = centroid.y + dimension.height * MathUtils.randFloat(...cp1Y);
       const c1z = MathUtils.randFloatSpread(cp1Z);
 
       for (let j = 0; j < VERTEX_ITEM_SIZE * CONTROL_ATTR_SIZE; j += CONTROL_ATTR_SIZE) {
+        // to spread bidirectionally.
         if (faceIdx % 2 === 0) {
           aCp0[startingVertexIdx + j + 0] = c0x;
           aCp0[startingVertexIdx + j + 1] = c0y;
@@ -139,16 +143,9 @@ export class ShatterAnimation {
           aCp1[startingVertexIdx + j + 1] = c0y;
           aCp1[startingVertexIdx + j + 2] = c0z;
         }
-
-        // aCp0[startingVertexIdx + j + 0] = c1x;
-        // aCp0[startingVertexIdx + j + 1] = c1y;
-        // aCp0[startingVertexIdx + j + 2] = c1z;
-
-        // aCp1[startingVertexIdx + j + 0] = c0x;
-        // aCp1[startingVertexIdx + j + 1] = c0y;
-        // aCp1[startingVertexIdx + j + 2] = c0z;
       }
 
+      // destinations for each vertices
       const desX = centroid.x + MathUtils.randFloatSpread(spreadX);
       const desY = centroid.y + dimension.height * MathUtils.randFloatSpread(spreadY);
       const desZ = MathUtils.randFloatSpread(spreadZ);
@@ -169,7 +166,6 @@ export class ShatterAnimation {
     geometry.setAttribute("aCp1", new BufferAttribute(new Float32Array(aCp1), CONTROL_ATTR_SIZE));
     geometry.setAttribute("aDestination", new BufferAttribute(new Float32Array(aDestination), DESTINATION_ATTR_SIZE));
 
-    const positions = geometry.getAttribute("position");
     // material setup
     material.flatShading = true;
     material.transparent = true;

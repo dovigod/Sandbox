@@ -12,7 +12,6 @@ export class ShatteredBufferGeometry extends BufferGeometry {
 
     this.updateCentroid();
   }
-
   updateCentroid() {
     const centroids = [];
     const positions = this.getAttribute("position");
