@@ -8,7 +8,7 @@ export function createAnimationContext(animation, config = { simulator: false })
     state: false,
     env: {
       mouse2d: new THREE.Vector2(0, 0),
-      mouse3d: new THREE.Vector3(0, 0, 0),
+      mouse3d: new THREE.Ray(),
       clock: new THREE.Clock(),
       dimension: {
         vpWidth: window.innerWidth,
@@ -23,9 +23,9 @@ export function createAnimationContext(animation, config = { simulator: false })
   let _frameId = null;
   const task = animation.bind(null, context);
 
-  const _setup = () => {
+  const _setup = async () => {
     if ("onSetup" in config) {
-      config.onSetup(context);
+      await config.onSetup(context);
     }
     _clearListeners = _setupListeners(context, config.listeners);
     if (context.stats) {

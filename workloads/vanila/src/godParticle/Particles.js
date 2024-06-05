@@ -1,22 +1,7 @@
 import * as THREE from "three";
+import { MeshGodMaterial } from "./material/GodMaterial";
 
-export function createParticleMesh(cnt = 100) {
-  // const pool = new THREE.Object3D();
-  // const geometry = new THREE.BufferGeometry();
-
-  // const vertices = new Float32Array(3 * cnt).map((v) => THREE.MathUtils.randFloatSpread(2000));
-
-  // geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-  // const material = new THREE.MeshBasicMaterial({ color: "#0x888888" });
-  // const mesh = new THREE.Points(geometry, material);
-
-  // mesh.castShadow = true;
-  // mesh.receiveShadow = true;
-  // pool.add(mesh);
-  // mesh.pool = pool;
-  // mesh.sizeAttenuation = false;
-
-  // return mesh;
+export function createParticles(cnt = 100) {
   const particles = 50000;
 
   const geometry = new THREE.BufferGeometry();
@@ -56,8 +41,9 @@ export function createParticleMesh(cnt = 100) {
 
   //
 
-  const material = new THREE.PointsMaterial({ size: 15, vertexColors: true });
+  // const material = new THREE.PointsMaterial({ size: 15, vertexColors: true });
 
+  const material = new MeshGodMaterial();
   const points = new THREE.Points(geometry, material);
 
   points.pool = new THREE.Object3D();

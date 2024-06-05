@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createAnimationContext } from "@packages/animation/src/context";
-import { createParticleMesh } from "./Particles";
+import { createParticles } from "./Particles";
 
 const _bgColor = "#343434";
 const _cameraConfig = {
@@ -41,7 +41,7 @@ function initStage(context) {
   controls.noPan = true;
   controls.update();
 
-  const mesh = createParticleMesh();
+  const mesh = createParticles();
   scene.add(mesh.pool);
   // mesh.pool.position.z = 1050;
 
