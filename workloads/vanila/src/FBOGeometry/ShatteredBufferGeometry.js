@@ -50,12 +50,4 @@ export class ShatteredBufferGeometry extends BufferGeometry {
     this.baseGeometry.applyMatrix4(matrix);
     this.updateCentroid();
   }
-
-  addVertexbBasedAttribute(name, size) {
-    const position = this.getAttribute("position");
-    const buffer = new Float32Array(position.length * size);
-    const attribute = new BufferAttribute(buffer, size);
-    this.setAttribute(name, attribute);
-    return attribute;
-  }
 }

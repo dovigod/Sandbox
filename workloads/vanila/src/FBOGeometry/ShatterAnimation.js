@@ -6,6 +6,7 @@ const FACE_ITEM_SIZE = 3;
 const ANIMATION_ATTR_SIZE = 2;
 const CONTROL_ATTR_SIZE = 3;
 const DESTINATION_ATTR_SIZE = 3;
+
 export class ShatterAnimation {
   #id = Symbol("shatter-animation-id");
   static activeSession = new WeakMap();
@@ -98,10 +99,10 @@ export class ShatterAnimation {
       const centroid = new Vector3(cx, cy, cz);
       const dimension = geometry.userData.size;
 
-      const delayX = Math.min(0, (centroid.x / dimension.width) * maxDelayX);
+      const delayX = Math.abs((centroid.x / dimension.width) * maxDelayX);
 
       // will splash up if not inverse
-      const delayY = Math.max(0, (1.0 - centroid.y / dimension.height) * maxDelayY);
+      const delayY = Math.abs(centroid.y / dimension.height) * maxDelayY;
       const duration = MathUtils.randFloat(minDuration, maxDuration);
 
       for (let j = 0; j < VERTEX_ITEM_SIZE * ANIMATION_ATTR_SIZE; j += ANIMATION_ATTR_SIZE) {
