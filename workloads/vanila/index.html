@@ -1,4 +1,4 @@
-<!doctype html>
+<!-- <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -10,5 +10,25 @@
     <div id="app"></div>
 
     <script type="module" src="%ENTRY_SCRIPT%"></script>
+  </body>
+</html> -->
+
+<html>
+  <head>
+    <title>Wasm Performance Comparison</title>
+    <script src="./src/wasm/index.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      var Module = {
+        onRuntimeInitialized: () => {
+          const testSet = Test({ wasmMode: 1 });
+          const test = new MapReadTest(100000);
+          testSet.measure(test, 10);
+        },
+      };
+    </script>
+    <script src="./src/wasm/test_wasm.js" type="text/javascript"></script>
+  </head>
+  <body style="text-align: center">
+    <canvas id="canvas" width="800" height="600"> </canvas>
   </body>
 </html>
