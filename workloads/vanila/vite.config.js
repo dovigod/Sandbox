@@ -16,6 +16,7 @@ export default config;
 function entryReplacementPlugin(entry) {
   return {
     name: "vite-plugin-entry-replacement",
+
     transformIndexHtml(html) {
       return html.replace("%ENTRY_SCRIPT%", resolve(__dirname, entry));
     },
