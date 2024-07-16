@@ -32,6 +32,15 @@ export default class Sketch {
     this.pointer = new THREE.Vector2();
     this.pointerPos = new THREE.Vector3();
 
+    this.whiteScene = new THREE.Scene();
+    this.whiteBg = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    this.whiteScene.add(this.whiteBg);
+    this.whiteBg.position.z = -1;
+
+    this.box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+    this.whiteScene.add(this.box);
+    this.whiteTarget = new THREE.WebGLRenderTarget(this.width, this.height);
+
     this.time = 0;
     this.isPlaying = true;
     this.setupPipeline();
@@ -56,6 +65,10 @@ export default class Sketch {
     this.sourceTarget = new THREE.WebGLRenderTarget(this.width, this.height);
     this.targetA = new THREE.WebGLRenderTarget(this.width, this.height);
     this.targetB = new THREE.WebGLRenderTarget(this.width, this.height);
+
+    this.renderer.setRenderTarget(this.whiteTarget);
+    this.renderer.render(this.whiteScene, this.camera);
+
     this.fboScene = new THREE.Scene();
     this.fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fboMaterial = new THREE.ShaderMaterial({
@@ -64,7 +77,7 @@ export default class Sketch {
           value: null,
         },
         uPrev: {
-          value: null, /// previous texture
+          value: this.whiteTarget.texture, /// previous texture
         },
         uResolution: {
           value: new THREE.Vector4(this.width, this.height, 1, 1),
@@ -183,7 +196,6 @@ export default class Sketch {
     this.renderer.setRenderTarget(this.targetA); // i want this to run the render loop on the same texture. to do this, create render target a ,b
     this.renderer.render(this.fboScene, this.fboCamera);
 
-    //running ping poing thing
     this.fboMaterial.uniforms.uDiffuse.value = this.sourceTarget.texture;
     this.fboMaterial.uniforms.uPrev.value = this.targetA.texture;
 
