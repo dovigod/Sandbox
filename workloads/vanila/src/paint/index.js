@@ -9,6 +9,9 @@ import GUI from "lil-gui";
 export default class Sketch {
   constructor(options) {
     this.scene = new THREE.Scene();
+    this.color = 0xff0000;
+    this.timer = new THREE.Clock();
+    this.frame = 0;
 
     this.container = options.dom;
     this.width = this.container.offsetWidth;
@@ -38,7 +41,7 @@ export default class Sketch {
     this.whiteBg.position.z = -1;
 
     this.box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-    this.whiteScene.add(this.box);
+    // this.whiteScene.add(this.box);
     this.whiteTarget = new THREE.WebGLRenderTarget(this.width, this.height);
 
     this.time = 0;
@@ -50,15 +53,20 @@ export default class Sketch {
     this.render();
     this.setupResize();
     this.settings();
+    console.log("done");
   }
 
   settings() {
     let that = this;
     this.settings = {
       progress: 0,
+      color: this.color,
     };
     this.gui = new GUI();
     this.gui.add(this.settings, "progress", 0, 1, 0.01);
+    this.gui.addColor(this.settings, "color", "#ff00ff").onChange((v) => {
+      this.color = new THREE.Vector4(v / 1000000 / 255, v / 10000 / 255, v / 100 / 255, (v % 100) / 255);
+    });
   }
 
   setupPipeline() {
@@ -73,6 +81,9 @@ export default class Sketch {
     this.fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fboMaterial = new THREE.ShaderMaterial({
       uniforms: {
+        uTime: {
+          value: this.time,
+        },
         uDiffuse: {
           value: null,
         },
@@ -81,6 +92,12 @@ export default class Sketch {
         },
         uResolution: {
           value: new THREE.Vector4(this.width, this.height, 1, 1),
+        },
+        uColor: {
+          value: new THREE.Vector4(),
+        },
+        uFrame: {
+          value: this.frame,
         },
       },
       vertexShader: vertexFBO,
@@ -121,8 +138,12 @@ export default class Sketch {
     );
 
     this.dummy = new THREE.Mesh(
-      new THREE.SphereGeometry(0.05, 20, 20),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      new THREE.SphereGeometry(0.2, 30, 30),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffffff,
+        // map: new THREE.TextureLoader().load(particle),
+        transparent: true,
+      }),
     );
 
     this.scene.add(this.dummy);
@@ -183,8 +204,19 @@ export default class Sketch {
       return;
     }
     this.time += 0.05;
+    // this.time = this.timer.getElapsedTime();
     this.material.uniforms.time.value = this.time;
-    requestAnimationFrame(this.render.bind(this));
+
+    const x = this.render.bind(this);
+    setTimeout(function () {
+      x();
+    }, 1000 / 30);
+    // requestAnimationFrame(this.render.bind(this));
+
+    this.frame = (this.frame + 1) % 180;
+    if (this.fboMaterial) {
+      this.fboMaterial.uniforms.uFrame.value = this.frame;
+    }
 
     //rendering the source
     // black background with white ball -> give it to source target (black & white texture)
@@ -196,6 +228,7 @@ export default class Sketch {
     this.renderer.setRenderTarget(this.targetA); // i want this to run the render loop on the same texture. to do this, create render target a ,b
     this.renderer.render(this.fboScene, this.fboCamera);
 
+    this.fboMaterial.uniforms.uTime.value = this.time;
     this.fboMaterial.uniforms.uDiffuse.value = this.sourceTarget.texture;
     this.fboMaterial.uniforms.uPrev.value = this.targetA.texture;
 

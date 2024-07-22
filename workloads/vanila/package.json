@@ -9,7 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@packages/animation": "workspace:*"
+    "@dvgs/vgesture": "^1.1.5",
+    "@packages/animation": "workspace:*",
+    "@tensorflow-models/hand-pose-detection": "^2.0.1",
+    "@tensorflow/tfjs-backend-wasm": "^4.20.0",
+    "@tensorflow/tfjs-backend-webgl": "^4.20.0",
+    "@tensorflow/tfjs-core": "^4.20.0"
   },
   "devDependencies": {
     "path": "^0.12.7",
