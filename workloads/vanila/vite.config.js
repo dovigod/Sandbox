@@ -1,13 +1,28 @@
 import { loadEnv, defineConfig } from "vite";
 import { resolve } from "path";
 import glsl from "vite-plugin-glsl";
+import topLevelAwait from "vite-plugin-top-level-await";
 
 // import { entryReplacementPlugin } from "@packages/plugins/vite";
 // console.log(entryReplacementPlugin);
 const config = defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
-    plugins: [entryReplacementPlugin(env.VITE_ENTRY), glsl()],
+    plugins: [
+      entryReplacementPlugin(env.VITE_ENTRY),
+      glsl(),
+
+      topLevelAwait({
+        promiseExportName: "__tla",
+        promiseImportName: (i) => `__tla_${i}`,
+      }),
+    ],
+    resolve: {
+      alias: {
+        "three/addons": "three/examples/jsm",
+        "three/tsl": "three/webgpu",
+      },
+    },
   };
 });
 

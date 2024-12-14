@@ -1,17 +1,20 @@
 import * as THREE from "three";
-import fragment from "./fragment.glsl";
-import vertex from "./vertex.glsl";
 import fragmentFBO from "./fragmentFBO.glsl";
 import vertexFBO from "./vertexFBO.glsl";
+import fragmentLerp from "./fragmentLerp.glsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import GUI from "lil-gui";
+import { TrailCanvas } from "./TrailCanvas";
 
-export default class Sketch {
+const log = (msg) => console.log(`%c ${msg}`, "color: red; background-color:Aquamarine;");
+const debug = (msg) => console.log(`%c ${msg}`, "color: black; background-color: yellow");
+
+export default class Stage {
   constructor(options) {
     this.scene = new THREE.Scene();
-    this.color = 0xff0000;
     this.timer = new THREE.Clock();
     this.frame = 0;
+    this.time = 0;
 
     this.container = options.dom;
     this.width = this.container.offsetWidth;
@@ -23,6 +26,8 @@ export default class Sketch {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.width, this.height);
     // this.renderer.setClearColor(0xeeeeee, 1);
+
+    // this.renderer.setClearColor(0x222222, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.container.appendChild(this.renderer.domElement);
@@ -40,33 +45,68 @@ export default class Sketch {
     this.whiteScene.add(this.whiteBg);
     this.whiteBg.position.z = -1;
 
+    // setInterval(() => {
+    //   console.log("fps::", this.frame);
+    //   this.frame = 0;
+    // }, 1000);
+
     this.box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
     // this.whiteScene.add(this.box);
     this.whiteTarget = new THREE.WebGLRenderTarget(this.width, this.height);
 
-    this.time = 0;
-    this.isPlaying = true;
+    this.trailCanvas = new TrailCanvas({
+      // interpolate: 2,
+      // smoothing: 0,
+      // maxAge: 6000,
+      // intensity: 0.3,
+      // radius: 0.08,
+      width: 512,
+      height: 512 * (document.body.offsetHeight / document.body.offsetWidth), // tmp maybe for aspect ratio,
+      smoothing: 0.4,
+      maxAge: 50,
+      smoothing: 0,
+      radius: 0.06,
+      interpolate: 2,
+      minForce: 0.6,
+      intensity: 1,
+      blend: "screen",
+      ease: (x) => {
+        return 1 - Math.pow(1 - x, 3);
+      },
+    });
+    this.lineConfig = {
+      // fadeSpeed: 0.14,
+      // lineStrength: 0.5,
+      // bleedSpeed: 0.3,
+      // bleedThreshold: 0.5,
+      // displacement: 0.5,
+      // displacement: 4,
+      // noiseFrequency: 15,
+      // noiseOctaves: 3,
+      // saturation: 0.95,
+      // luminosity: 0.8,
+      // bleedBlur: 0.3,
+      // lineBlur: 0.5,
+      // delta: 0.1,
+      fadeSpeed: 0.62,
+      lineStrength: 1,
+      bleedSpeed: 0.3,
+      bleedThreshold: 1.6,
+      saturation: 0.7,
+      luminosity: 0.48,
+      displacement: 0.5,
+      bleedBlur: 0,
+      lineBlur: 0,
+      delta: 0.1,
+    };
+
     this.setupPipeline();
-    this.addObjects();
+    this.settings();
     this.resize();
     this.mouseEvents();
     this.render();
     this.setupResize();
-    this.settings();
-    console.log("done");
-  }
-
-  settings() {
-    let that = this;
-    this.settings = {
-      progress: 0,
-      color: this.color,
-    };
-    this.gui = new GUI();
-    this.gui.add(this.settings, "progress", 0, 1, 0.01);
-    this.gui.addColor(this.settings, "color", "#ff00ff").onChange((v) => {
-      this.color = new THREE.Vector4(v / 1000000 / 255, v / 10000 / 255, v / 100 / 255, (v % 100) / 255);
-    });
+    log("----- ---- Ready ---- ----- ");
   }
 
   setupPipeline() {
@@ -99,6 +139,39 @@ export default class Sketch {
         uFrame: {
           value: this.frame,
         },
+        uTrailer: {
+          value: this.trailCanvas.texture,
+        },
+        uLineBlur: {
+          value: this.lineConfig.lineBlur,
+        },
+        uBleedBlur: {
+          value: this.lineConfig.bleedBlur,
+        },
+        uSaturation: {
+          value: this.lineConfig.saturation,
+        },
+        uLuminosity: {
+          value: this.lineConfig.luminosity,
+        },
+        uBleedSpeed: {
+          value: this.lineConfig.bleedSpeed,
+        },
+        uBleedThreshold: {
+          value: this.lineConfig.bleedThreshold,
+        },
+        uLineStrength: {
+          value: this.lineConfig.lineStrength,
+        },
+        uFadeSpeed: {
+          value: this.lineConfig.fadeSpeed,
+        },
+        uDisplacement: {
+          value: this.lineConfig.displacement,
+        },
+        uDelta: {
+          value: this.lineConfig.delta,
+        },
       },
       vertexShader: vertexFBO,
       fragmentShader: fragmentFBO,
@@ -123,6 +196,22 @@ export default class Sketch {
     window.addEventListener("resize", this.resize.bind(this));
   }
 
+  settings() {
+    const gui = new GUI({ width: 200 });
+    this.gui = gui;
+
+    gui.add(this.lineConfig, "saturation", 0, 1, 0.01);
+    gui.add(this.lineConfig, "luminosity", 0, 1, 0.01);
+    gui.add(this.lineConfig, "bleedThreshold", 0, 100, 0.01);
+    gui.add(this.lineConfig, "bleedSpeed", -1, 1, 0.0001);
+    gui.add(this.lineConfig, "bleedBlur", -10, 10, 0.01);
+    gui.add(this.lineConfig, "lineStrength", 0, 1, 0.01);
+    gui.add(this.lineConfig, "fadeSpeed", -3, 1, 0.01);
+    gui.add(this.lineConfig, "lineBlur", 0, 1, 0.01);
+    gui.add(this.lineConfig, "displacement", 0, 10, 0.01);
+    gui.add(this.lineConfig, "delta", 0, 1, 0.0001);
+  }
+
   resize() {
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
@@ -138,18 +227,19 @@ export default class Sketch {
     );
 
     this.dummy = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2, 30, 30),
+      new THREE.SphereGeometry(0.05, 30, 30),
       new THREE.MeshBasicMaterial({
         color: 0xffffffff,
         // map: new THREE.TextureLoader().load(particle),
         transparent: true,
       }),
     );
-
     this.scene.add(this.dummy);
     window.addEventListener("mousemove", (e) => {
       this.pointer.x = (e.clientX / this.width) * 2 - 1;
       this.pointer.y = -(e.clientY / this.height) * 2 + 1;
+
+      this.trailCanvas.addTouch(this.pointer);
 
       this.raycaster.setFromCamera(this.pointer, this.camera);
       const intersects = this.raycaster.intersectObjects([this.raycastPlane]);
@@ -159,79 +249,54 @@ export default class Sketch {
     });
   }
 
-  addObjects() {
-    let that = this;
-    this.material = new THREE.ShaderMaterial({
-      extensions: {
-        derivatives: "#extension GL_OES_standard_derivatives: enable",
-      },
-      side: THREE.DoubleSide,
-      uniforms: {
-        time: {
-          type: "f",
-          value: 0,
-        },
-        resolution: {
-          type: "v4",
-          value: new THREE.Vector4(),
-        },
-        uvRate1: {
-          value: new THREE.Vector2(1, 1),
-        },
-      },
-      fragmentShader: fragment,
-      vertexShader: vertex,
-    });
-
-    this.geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
-    this.plane = new THREE.Mesh(this.geometry, this.material);
-
-    // this.scene.add(this.plane);
-  }
-
-  stop() {
-    this.isPlaying = false;
-  }
-  play() {
-    if (!this.isPlaying) {
-      this.render();
-      this.isPlaying = true;
-    }
-  }
-
   render() {
-    if (!this.isPlaying) {
-      return;
-    }
-    this.time += 0.05;
+    // this.time += 0.05;
+    const time = this.timer.getElapsedTime();
+    this.time = (time - Math.floor(time)) / 100;
+    this.frame = this.frame + 1;
     // this.time = this.timer.getElapsedTime();
-    this.material.uniforms.time.value = this.time;
+    // this.material.uniforms.time.value = this.time;
 
-    const x = this.render.bind(this);
-    setTimeout(function () {
-      x();
-    }, 1000 / 30);
-    // requestAnimationFrame(this.render.bind(this));
+    // const x = this.render.bind(this);
+    // setTimeout(function () {
+    //   x();
+    // }, 1000 / 60);
+    requestAnimationFrame(this.render.bind(this));
 
-    this.frame = (this.frame + 1) % 180;
-    if (this.fboMaterial) {
-      this.fboMaterial.uniforms.uFrame.value = this.frame;
-    }
+    this.trailCanvas.update(this.time);
+    // return;
 
     //rendering the source
     // black background with white ball -> give it to source target (black & white texture)
     this.renderer.setRenderTarget(this.sourceTarget);
+    this.renderer.setRenderTarget(null);
     this.renderer.render(this.scene, this.camera);
+    this.renderer.setRenderTarget(null);
 
-    // running framebuffer output on same texture
-    //below two, only for calculation purpose.
-    this.renderer.setRenderTarget(this.targetA); // i want this to run the render loop on the same texture. to do this, create render target a ,b
+    //only for calculation purpose.
+    this.renderer.setRenderTarget(this.targetA);
     this.renderer.render(this.fboScene, this.fboCamera);
 
-    this.fboMaterial.uniforms.uTime.value = this.time;
+    // console.dir(this.trailCanvas.texture);
+
+    this.fboMaterial.uniforms.uTime.value = time;
+    this.fboMaterial.uniforms.uTrailer.value = this.trailCanvas.texture;
     this.fboMaterial.uniforms.uDiffuse.value = this.sourceTarget.texture;
     this.fboMaterial.uniforms.uPrev.value = this.targetA.texture;
+    this.fboMaterial.uniforms.uBleedBlur.value = this.lineConfig.bleedBlur;
+    this.fboMaterial.uniforms.uBleedSpeed.value = this.lineConfig.bleedSpeed;
+    this.fboMaterial.uniforms.uBleedThreshold.value = this.lineConfig.bleedThreshold;
+    this.fboMaterial.uniforms.uSaturation.value = this.lineConfig.saturation;
+    this.fboMaterial.uniforms.uLuminosity.value = this.lineConfig.luminosity;
+    this.fboMaterial.uniforms.uLineStrength.value = this.lineConfig.lineStrength;
+    this.fboMaterial.uniforms.uFadeSpeed.value = this.lineConfig.fadeSpeed;
+    this.fboMaterial.uniforms.uLineBlur.value = this.lineConfig.lineBlur;
+    this.fboMaterial.uniforms.uDisplacement.value = this.lineConfig.displacement;
+    this.fboMaterial.uniforms.uDelta.value = this.timer.getDelta() * 90;
 
+    // console.log(this.fboMaterial.uniforms.uDelta.value);
+    // console.log(this.timer.getDelta());
+    /// 0.015  ~ 0.155
     //final render
     this.finalQuad.material.map = this.targetA.texture;
     this.renderer.setRenderTarget(null);
@@ -240,14 +305,11 @@ export default class Sketch {
     let temp = this.targetA;
     this.targetA = this.targetB;
     this.targetB = temp;
-
-    // i want above to run on same texture. -> create two targets
-    //final: just outputting
   }
 }
 
-const sketch = new Sketch({
+const stage = new Stage({
   dom: document.getElementById("container"),
 });
 
-sketch.render();
+stage.render();

@@ -12,7 +12,6 @@ const pointer = {
 const scene = new THREE.Scene();
 const container = document.querySelector("body");
 const raycaster = new THREE.Raycaster();
-
 let width = container.offsetWidth;
 let height = container.offsetHeight;
 const renderer = new THREE.WebGLRenderer({});
