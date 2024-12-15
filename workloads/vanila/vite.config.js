@@ -20,7 +20,7 @@ const config = defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         "three/addons": "three/examples/jsm",
-        "three/tsl": "three/webgpu",
+        "three/tsl": "three/tsl",
       },
     },
   };

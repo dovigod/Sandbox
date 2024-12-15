@@ -20,6 +20,11 @@ canvas {
   height: 100%;
 }
 
+.remove-styles {
+  width: initial;
+  height: initial;
+}
+
 #vGesture-video {
   width: 100vw !important;
   height: 100vh !important;
