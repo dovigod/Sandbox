@@ -139,7 +139,7 @@ export default class Sketch {
 
     //instanced plane (grid)
 
-    let rows = 50;
+    let rows = 2000;
     let columns = Math.floor(rows / this.camera.aspect); //50;
     let instances = rows * columns;
     let size = 0.1; // size of each char
