@@ -17,6 +17,7 @@ const config = defineConfig(({ command, mode }) => {
         promiseImportName: (i) => `__tla_${i}`,
       }),
     ],
+    assetsInclude: ["**/*.glb"],
     resolve: {
       alias: {
         "three/addons": "three/examples/jsm",
